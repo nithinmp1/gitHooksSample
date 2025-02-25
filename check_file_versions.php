@@ -24,7 +24,7 @@ if (empty($branches)) {
 // Find branches that were created after the current branch
 $foundCurrentBranch = false;
 $newerBranches = [];
-
+var_dump($branches);
 foreach ($branches as $branch) {
     if ($branch === $currentBranch) {
         $foundCurrentBranch = true;
@@ -51,6 +51,7 @@ foreach ($modifiedFiles as $file) {
         var_dump($matches);
         $baseName = $matches[1]; // "file"
         $currentVersion = (float) $matches[2]; // 01 -> 1.0
+        var_dump($config[$baseName]);
 
         if (isset($config[$baseName])) {
             $latestVersion = (float) $config[$baseName];
