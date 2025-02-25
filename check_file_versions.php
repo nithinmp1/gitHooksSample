@@ -1,19 +1,15 @@
 <?php
 
-// Configuration file for latest versions
-$configFile = 'config.php';
-if (!file_exists($configFile)) {
-    echo "❌ Error: Missing configuration file ($configFile).\n";
-    exit(1);
-}
-
-// Load file versions from config
-$config = include $configFile;
+// Configuration file name
+$configFileName = 'config.php';
 
 // Get the current branch
 $currentBranch = trim(shell_exec("git rev-parse --abbrev-ref HEAD"));
 
-// Get all remote branches sorted by creation date
+if ($currentBranch === 'master') {
+    exit(0); // Allow commit without checking
+}
+// Get all branches sorted by creation date
 $branches = explode("\n", trim(shell_exec("git for-each-ref --sort=creatordate --format='%(refname:short)' refs/heads/")));
 
 if (empty($branches)) {
@@ -21,9 +17,9 @@ if (empty($branches)) {
     exit(1);
 }
 
-// Find branches that were created after the current branch
-$foundCurrentBranch = false;
+// Find branches created after the current branch
 $newerBranches = [];
+$foundCurrentBranch = false;
 
 foreach ($branches as $branch) {
     if ($branch === $currentBranch) {
@@ -33,6 +29,7 @@ foreach ($branches as $branch) {
     }
 }
 
+// Show a warning if newer branches exist
 if (!empty($newerBranches)) {
     echo "⚠️ Warning: There are newer branches than your current branch:\n";
     foreach ($newerBranches as $branch) {
@@ -40,25 +37,61 @@ if (!empty($newerBranches)) {
     }
 }
 
-// Get the list of modified files
-$modifiedFiles = array_slice($argv, 1);
-var_dump($modifiedFiles);
+/**
+ * Reads the latest file versions from config.php in a given branch.
+ */
+function getLatestVersionsFromBranch($branch) {
+    global $configFileName;
+    $configContent = trim(shell_exec("git show $branch:$configFileName 2>/dev/null"));
+
+    if (!$configContent) {
+        return [];
+    }
+
+    // Convert PHP config file content into an array
+    $versions = eval(substr($configContent, strpos($configContent, 'return '))); 
+
+    return is_array($versions) ? $versions : [];
+}
+
+/**
+ * Gets the highest version of a file across all branches.
+ */
+function getHighestVersionAcrossBranches($fileBaseName) {
+    global $branches;
+    $highestVersion = 0.0;
+    foreach ($branches as $branch) {
+        $versions = getLatestVersionsFromBranch($branch);
+        
+        if (isset($versions[$fileBaseName])) {
+            $branchVersion = (float) $versions[$fileBaseName];
+            if ($branchVersion > $highestVersion) {
+                $highestVersion = $branchVersion;
+            }
+        }
+    }
+
+    return $highestVersion;
+}
+
+// Get staged files
+exec("git diff --cached --name-only", $modifiedFiles);
+
 foreach ($modifiedFiles as $file) {
     $fileName = pathinfo($file, PATHINFO_FILENAME);
 
-    // Extract version number from filename (assume format: file-XX)
-    if (preg_match('/^(.*)-(\d+\.\d+)\.php$/', $file, $matches)) {
-        var_dump($matches);
+    // Extract version number from filename (Format: file-XX.php)
+    if (preg_match('/^(.*)-(\d+\.\d+)$/', $fileName, $matches)) {
         $baseName = $matches[1]; // "file"
-        $currentVersion = (float) $matches[2]; // 01 -> 1.0
+        $currentVersion = (float) $matches[2]; // Extract version
 
-        if (isset($config[$baseName])) {
-            $latestVersion = (float) $config[$baseName];
-            var_dump($currentVersion .'<'. $latestVersion);
-            if ($currentVersion < $latestVersion) {
-                echo "❌ Error: You are editing an outdated version of '$file'. Latest version is $latestVersion.\n";
-                exit(1);
-            }
+        // Get the highest version across all branches from config.php
+        $latestVersion = getHighestVersionAcrossBranches($baseName);
+
+        // Block commit if modifying an outdated file
+        if ($currentVersion < $latestVersion) {
+            echo "❌ Error: You are editing an outdated version of '$file'. Latest version is $latestVersion.\n";
+            exit(1);
         }
     }
 }
