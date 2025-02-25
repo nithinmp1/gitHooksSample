@@ -43,7 +43,7 @@ if (!empty($newerBranches)) {
 
 // Get staged files
 exec("git diff --cached --name-only", $modifiedFiles);
-
+var_dump($modifiedFiles);
 foreach ($modifiedFiles as $file) {
     $fileName = pathinfo($file, PATHINFO_FILENAME);
 
@@ -51,7 +51,7 @@ foreach ($modifiedFiles as $file) {
     if (preg_match('/^(.*)-(\d+\.\d+)$/', $fileName, $matches)) {
         $baseName = $matches[1]; // "file"
         $currentVersion = (float) $matches[2]; // Extract version
-
+        var_dump($config[$baseName]);
         if (isset($config[$baseName])) {
             $latestVersion = (float) $config[$baseName];
 
