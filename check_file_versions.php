@@ -86,17 +86,18 @@ foreach ($modifiedFiles as $file) {
     // Extract version number from filename (Format: file-XX.php)
     if (preg_match('/^(.*)-(\d+\.\d+)$/', $fileName, $matches)) {
     // Extract version number from filename (Format: file-XX.php)
-    if (preg_match('/^(.*)-(\d+\.\d+)$/', $fileName, $matches)) {
-        $baseName = $matches[1]; // "file"
-        $currentVersion = (float) $matches[2]; // Extract version
+        if (preg_match('/^(.*)-(\d+\.\d+)$/', $fileName, $matches)) {
+            $baseName = $matches[1]; // "file"
+            $currentVersion = (float) $matches[2]; // Extract version
 
-        // Get the highest version across all branches from config.php
-        $latestVersion = getHighestVersionAcrossBranches($baseName);
+            // Get the highest version across all branches from config.php
+            $latestVersion = getHighestVersionAcrossBranches($baseName);
 
-        // Block commit if modifying an outdated file
-        if ($currentVersion < $latestVersion) {
-            echo "❌ Error: You are editing an outdated version of '$file'. Latest version is $latestVersion.\n";
-            exit(1);
+            // Block commit if modifying an outdated file
+            if ($currentVersion < $latestVersion) {
+                echo "❌ Error: You are editing an outdated version of '$file'. Latest version is $latestVersion.\n";
+                exit(1);
+            }
         }
     }
 }
