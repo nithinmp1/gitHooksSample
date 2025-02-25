@@ -42,7 +42,7 @@ if (!empty($newerBranches)) {
 
 // Get the list of modified files
 $modifiedFiles = array_slice($argv, 1);
-
+var_dump($modifiedFiles);die;
 foreach ($modifiedFiles as $file) {
     $fileName = pathinfo($file, PATHINFO_FILENAME);
 
