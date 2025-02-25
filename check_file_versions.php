@@ -42,18 +42,19 @@ if (!empty($newerBranches)) {
 
 // Get the list of modified files
 $modifiedFiles = array_slice($argv, 1);
-var_dump($modifiedFiles);die;
+var_dump($modifiedFiles);
 foreach ($modifiedFiles as $file) {
     $fileName = pathinfo($file, PATHINFO_FILENAME);
 
     // Extract version number from filename (assume format: file-XX)
-    if (preg_match('/(.+)-(\d+)/', $fileName, $matches)) {
+    if (preg_match('/^(.*)-(\d+\.\d+)\.php$/', $file, $matches)) {
+        var_dump($matches);
         $baseName = $matches[1]; // "file"
         $currentVersion = (float) $matches[2]; // 01 -> 1.0
 
         if (isset($config[$baseName])) {
             $latestVersion = (float) $config[$baseName];
-
+            var_dump($currentVersion .'<'. $latestVersion);
             if ($currentVersion < $latestVersion) {
                 echo "❌ Error: You are editing an outdated version of '$file'. Latest version is $latestVersion.\n";
                 exit(1);
