@@ -19,6 +19,8 @@ if (empty($branches)) {
 
 // Find branches created after the current branch
 $newerBranches = [];
+// Find branches created after the current branch
+$newerBranches = [];
 $foundCurrentBranch = false;
 
 foreach ($branches as $branch) {
@@ -29,6 +31,7 @@ foreach ($branches as $branch) {
     }
 }
 
+// Show a warning if newer branches exist
 // Show a warning if newer branches exist
 if (!empty($newerBranches)) {
     echo "⚠️ Warning: There are newer branches than your current branch:\n";
@@ -80,6 +83,8 @@ exec("git diff --cached --name-only", $modifiedFiles);
 foreach ($modifiedFiles as $file) {
     $fileName = pathinfo($file, PATHINFO_FILENAME);
 
+    // Extract version number from filename (Format: file-XX.php)
+    if (preg_match('/^(.*)-(\d+\.\d+)$/', $fileName, $matches)) {
     // Extract version number from filename (Format: file-XX.php)
     if (preg_match('/^(.*)-(\d+\.\d+)$/', $fileName, $matches)) {
         $baseName = $matches[1]; // "file"
