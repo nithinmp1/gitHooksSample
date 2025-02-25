@@ -57,10 +57,8 @@ function getLatestVersionsFromBranch($branch) {
 function getHighestVersionAcrossBranches($fileBaseName) {
     global $branches;
     $highestVersion = 0.0;
-    var_dump($branches);
     foreach ($branches as $branch) {
         $versions = getLatestVersionsFromBranch($branch);
-        var_dump($versions);
         
         if (isset($versions[$fileBaseName])) {
             $branchVersion = (float) $versions[$fileBaseName];
@@ -88,8 +86,6 @@ foreach ($modifiedFiles as $file) {
         $latestVersion = getHighestVersionAcrossBranches($baseName);
 
         // Block commit if modifying an outdated file
-        var_dump($currentVersion .'<'. $latestVersion);die;
-        exit(1);
         if ($currentVersion < $latestVersion) {
             echo "❌ Error: You are editing an outdated version of '$file'. Latest version is $latestVersion.\n";
             exit(1);
