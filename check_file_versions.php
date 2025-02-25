@@ -13,7 +13,7 @@ $config = include $configFile;
 // Get the current branch
 $currentBranch = trim(shell_exec("git rev-parse --abbrev-ref HEAD"));
 
-// Get all remote branches sorted by creation date
+// Get all branches sorted by creation date
 $branches = explode("\n", trim(shell_exec("git for-each-ref --sort=creatordate --format='%(refname:short)' refs/heads/")));
 
 if (empty($branches)) {
@@ -21,10 +21,10 @@ if (empty($branches)) {
     exit(1);
 }
 
-// Find branches that were created after the current branch
-$foundCurrentBranch = false;
+// Find branches created after the current branch
 $newerBranches = [];
-var_dump($branches);
+$foundCurrentBranch = false;
+
 foreach ($branches as $branch) {
     if ($branch === $currentBranch) {
         $foundCurrentBranch = true;
@@ -33,6 +33,7 @@ foreach ($branches as $branch) {
     }
 }
 
+// Show a warning if newer branches exist
 if (!empty($newerBranches)) {
     echo "⚠️ Warning: There are newer branches than your current branch:\n";
     foreach ($newerBranches as $branch) {
@@ -40,21 +41,21 @@ if (!empty($newerBranches)) {
     }
 }
 
-// Get the list of modified files
-$modifiedFiles = array_slice($argv, 1);
-var_dump($modifiedFiles);
+// Get staged files
+exec("git diff --cached --name-only", $modifiedFiles);
+
 foreach ($modifiedFiles as $file) {
     $fileName = pathinfo($file, PATHINFO_FILENAME);
 
-    // Extract version number from filename (assume format: file-XX)
-    if (preg_match('/^(.*)-(\d+\.\d+)\.php$/', $file, $matches)) {
-        var_dump($matches);
+    // Extract version number from filename (Format: file-XX.php)
+    if (preg_match('/^(.*)-(\d+\.\d+)$/', $fileName, $matches)) {
         $baseName = $matches[1]; // "file"
-        $currentVersion = (float) $matches[2]; // 01 -> 1.0
-        var_dump($config[$baseName]);
+        $currentVersion = (float) $matches[2]; // Extract version
 
         if (isset($config[$baseName])) {
             $latestVersion = (float) $config[$baseName];
+
+            // Block commit if modifying an outdated file
             var_dump($currentVersion .'<'. $latestVersion);
             if ($currentVersion < $latestVersion) {
                 echo "❌ Error: You are editing an outdated version of '$file'. Latest version is $latestVersion.\n";
