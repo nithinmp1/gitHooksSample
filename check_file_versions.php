@@ -41,9 +41,33 @@ if (!empty($newerBranches)) {
     }
 }
 
+// Function to find the latest file version across all branches
+function getLatestVersionAcrossBranches($fileBaseName) {
+    global $branches;
+    $latestVersion = 0.0;
+
+    foreach ($branches as $branch) {
+        // Get the list of files in each branch
+        $files = explode("\n", trim(shell_exec("git ls-tree -r --name-only $branch")));
+        
+        foreach ($files as $file) {
+            if (preg_match('/^(.*)-(\d+\.\d+)\.php$/', $file, $matches)) {
+                $baseName = $matches[1]; 
+                $version = (float) $matches[2];
+
+                if ($baseName === $fileBaseName && $version > $latestVersion) {
+                    $latestVersion = $version;
+                }
+            }
+        }
+    }
+
+    return $latestVersion;
+}
+
 // Get staged files
 exec("git diff --cached --name-only", $modifiedFiles);
-var_dump($modifiedFiles);
+
 foreach ($modifiedFiles as $file) {
     $fileName = pathinfo($file, PATHINFO_FILENAME);
 
@@ -51,16 +75,15 @@ foreach ($modifiedFiles as $file) {
     if (preg_match('/^(.*)-(\d+\.\d+)$/', $fileName, $matches)) {
         $baseName = $matches[1]; // "file"
         $currentVersion = (float) $matches[2]; // Extract version
-        var_dump($config[$baseName]);
-        if (isset($config[$baseName])) {
-            $latestVersion = (float) $config[$baseName];
 
-            // Block commit if modifying an outdated file
-            var_dump($currentVersion .'<'. $latestVersion);
-            if ($currentVersion < $latestVersion) {
-                echo "❌ Error: You are editing an outdated version of '$file'. Latest version is $latestVersion.\n";
-                exit(1);
-            }
+        // Get latest version across all branches
+        $latestVersion = getLatestVersionAcrossBranches($baseName);
+
+        // Block commit if modifying an outdated file
+        var_dump($currentVersion .'<'. $latestVersion);
+        if ($currentVersion < $latestVersion) {
+            echo "❌ Error: You are editing an outdated version of '$file'. Latest version is $latestVersion.\n";
+            exit(1);
         }
     }
 }
